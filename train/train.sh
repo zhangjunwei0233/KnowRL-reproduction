@@ -16,7 +16,7 @@ export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
 # Set GPU device
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 # Configuration file
 CONFIG_FILE="./script/grpo.yaml"
