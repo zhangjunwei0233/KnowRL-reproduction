@@ -548,12 +548,6 @@ You need **THREE** API keys:
 ### 2.2 Configure Environment Variables
 Edit `train/train.sh` with your API keys:
 
-```bash
-cd train/
-cp train.sh train.sh.backup  # Create backup
-nano train.sh  # Edit with your preferred editor
-```
-
 **Replace placeholders with actual keys**:
 ```bash
 export OPENAI_API_KEY_FACTSCORE="sk-your-factscore-key-here"
