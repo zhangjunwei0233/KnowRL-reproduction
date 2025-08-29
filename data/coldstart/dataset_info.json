@@ -1,0 +1,10 @@
+{
+  "knowrl_coldstart": {
+    "file_name": "knowrl_coldstart.json",
+    "file_sha1": "none",
+    "columns": {
+      "prompt": "conversations"
+    },
+    "formatting": "sharegpt"
+  }
+}
