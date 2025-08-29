@@ -74,7 +74,7 @@ beautifulsoup4==4.13.3
 
 # Build dependencies
 ninja==1.11.1.3
-protobuf==5.29.3
+protobuf>=3.20.0,<4.0.0
 grpcio==1.70.0
 google-api-core==2.24.1
 google-auth==2.38.0
