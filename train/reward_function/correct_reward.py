@@ -25,7 +25,7 @@ class RewardEvaluator:
             self.client = OpenAI(api_key=api_key, base_url=api_base)
             self.use_api_manager = False
             
-        self.model_name = "gpt-4o-mini"
+        self.model_name = "deepseek-chat"
         logger.info(f"Using model: {self.model_name}")
         
         # Define refusal patterns

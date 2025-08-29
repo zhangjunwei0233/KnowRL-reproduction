@@ -135,7 +135,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 llama-factory-cli train llama_factory_sft.yaml
 ```
 
 ### Stage 2: Knowledgeable Reinforcement Learning 
-This stage uses the SFT-tuned model and further trains it with our knowledge-enhanced reward signal. The process is orchestrated by `train/train.sh`, which launches `main.py` using the configuration defined in `script/grpo.yaml`. We are training two 7B models, `DeepSeek-R1-Distill-Qwen-7B` and `Skywork-OR1-7B-Preview`, on 1×A800 GPU.
+This stage uses the SFT-tuned model and further trains it with our knowledge-enhanced reward signal. The process is orchestrated by `train/train.sh`,
+which launches `main.py` using the configuration defined in `script/grpo.yaml`. We are training two 7B models, `DeepSeek-R1-Distill-Qwen-7B` and `Skywork-OR1-7B-Preview`, on 1×A800 GPU.
 
 **a. Environment Variables in `train/train.sh`:**
 This script sets up all necessary environment variables and executes the training.
@@ -211,7 +212,12 @@ fi
 ## 🧐Evaluation
 All our models are evaluated on the excellent [OpenCompass](https://github.com/open-compass/opencompass) platform. We thank its authors for their great contribution to the community!
 
-Please refer to our paper for the detailed results. For the specific benchmarks, our settings are as follows. On **TruthfulQA**, we use the BLEU score to measure correctness in a 0-shot setting. For both **SimpleQA** and **ChineseSimpleQA**, we use `gpt-4o-mini` to judge the correctness of the answers; specifically for the English SimpleQA, we append the prompt "Let's think step by step" to elicit a reasoning process, while the Chinese version is kept as 0-shot. When evaluating on **GPQA**, we focus exclusively on the diamond subset and determine correctness by extracting the answer from a pre-defined output format, also using a 0-shot prompt. Lastly, the **AIME 2025** benchmark is also judged by `gpt-4o-mini` in a 0-shot setting.
+Please refer to our paper for the detailed results. For the specific benchmarks, our settings are as follows.
+On **TruthfulQA**, we use the BLEU score to measure correctness in a 0-shot setting. For both **SimpleQA** and **ChineseSimpleQA**,
+we use `gpt-4o-mini` to judge the correctness of the answers; specifically for the English SimpleQA, we append the prompt
+"Let's think step by step" to elicit a reasoning process, while the Chinese version is kept as 0-shot. When evaluating on **GPQA**,
+we focus exclusively on the diamond subset and determine correctness by extracting the answer from a pre-defined output format,
+also using a 0-shot prompt. Lastly, the **AIME 2025** benchmark is also judged by `gpt-4o-mini` in a 0-shot setting.
 
 
 ## 🚩Citation

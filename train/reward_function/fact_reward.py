@@ -36,7 +36,7 @@ class FactualityScorer:
                 openai_key=openai_api_key,
                 base_url=base_url,
                 cache_dir=None,
-                af_model_version='gpt-4o-mini',
+                af_model_version='deepseek-chat',
                 use_nli=True,
                 nli_model_name="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
                 nli_entailment_threshold=0.3,
@@ -206,4 +206,3 @@ class FactualityScorer:
             save_json_output(error_log, "factuality_error")
 
         return rewards
-
