@@ -274,16 +274,14 @@ python -c "import unsloth; print('Unsloth installed successfully')"
 
 **Server storage setup (recommended):**
 ```bash
-# Set HuggingFace cache to your storage location
-export HF_HOME="/data22/zhangjunwei/huggingface_cache"
-export TRANSFORMERS_CACHE="/data22/zhangjunwei/huggingface_cache"
+# Use existing shared HuggingFace cache (public models already downloaded)
+export HF_HOME="/data22/public/huggingface"
 
-# Create cache directory
-mkdir -p /data22/zhangjunwei/huggingface_cache
+# Verify access to shared cache
+ls -la /data22/public/huggingface/hub/
 
 # Make permanent by adding to ~/.bashrc
-echo 'export HF_HOME="/data22/zhangjunwei/huggingface_cache"' >> ~/.bashrc
-echo 'export TRANSFORMERS_CACHE="/data22/zhangjunwei/huggingface_cache"' >> ~/.bashrc
+echo 'export HF_HOME="/data22/public/huggingface"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -335,7 +333,7 @@ tmux new-session -s knowrl-training
 
 # 2. Run your training commands inside tmux
 cd ~/KnowRL/train/
-bash train_server.sh
+bash train.sh
 
 # 3. Detach safely when needed
 Ctrl+b, d
@@ -345,187 +343,57 @@ ssh username@your-server
 tmux attach -t knowrl-training
 ```
 
-#### 1.7 Server Storage Configuration (For Users with Separate Storage)
+#### 1.7 Server Storage Configuration
 
-If you're using a server environment where you need to keep the codebase in your home folder but store large files (datasets, models, knowledge base) in a separate storage location, follow this configuration.
+This section configures storage paths for your server environment. All training data, models, and outputs will be stored under `/data22/zhangjunwei/` directory.
 
-##### 1.5.1 Recommended Directory Structure
+##### 1.7.1 Create Storage Directory Structure
 
 ```bash
-# Codebase (in home folder)
-~/KnowRL/
-├── train/
-├── data/                    # Will be symlinked to storage
-└── requirements.txt
-
-# Data and Models (in storage folder - example: /data22/username/)
-/data22/zhangjunwei/
-├── models/
-│   ├── base_models/
-│   │   ├── deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/
-│   │   └── skywork--Skywork-OR1-7B-Preview/
-│   ├── sft_output/
-│   └── final_knowrl_models/
-├── datasets/
-│   ├── coldstart/
-│   │   └── knowrl_coldstart.json
-│   └── rl/
-│       └── knowrl_RLdata.json
-├── knowledge_base/
-│   └── knowledge_base.db
-└── experiment_outputs/
-    └── knowrl_experiments/
-```
-
-##### 1.5.2 Storage Setup Process
-
-**Step A: Create Storage Directory Structure**
-```bash
-# Replace '/data22/zhangjunwei' with your storage path
+# Create organized storage structure
 STORAGE_ROOT="/data22/zhangjunwei"
 
-mkdir -p $STORAGE_ROOT/{models/{base_models,sft_output,final_knowrl_models},datasets/{coldstart,rl},knowledge_base,experiment_outputs}
+mkdir -p $STORAGE_ROOT/{knowrl_training/{models,outputs,logs},knowledge_base}
 
-# Verify structure
+# Verify structure created
 ls -la $STORAGE_ROOT/
 ```
 
-**Step B: Check Available Storage Space**
+**Directory Structure:**
+```
+/data22/zhangjunwei/
+├── knowrl_training/
+│   ├── models/          # Trained model outputs (LoRA adapters) 
+│   ├── outputs/         # Training checkpoints and artifacts
+│   └── logs/            # Training logs and metrics
+└── knowledge_base/      # FActScore knowledge database
+```
+
+##### 1.7.2 Check Storage Requirements
+
 ```bash
-# Ensure you have sufficient space
+# Verify available space
 df -h /data22/zhangjunwei/
 
-# Minimum requirements:
-# - Base model (7B): ~13GB
-# - SFT output: ~2GB (LoRA adapters)  
+# Storage requirements:
 # - Knowledge base: ~1.2GB
-# - Training outputs: ~5GB
-# - Total needed: ~25GB minimum
+# - Training outputs: ~5-10GB per experiment
+# - Logs and metrics: ~1GB
+# - Total recommended: ~20GB free space
 ```
 
-##### 1.5.3 Configuration Approach Options
+##### 1.7.3 Configure Training Paths
 
-**Option 1: Symlinks Approach (Recommended - Minimal Code Changes)**
+**Key paths to remember for configuration:**
 
-```bash
-cd ~/KnowRL/
+| Component | Storage Path | Used In |
+|-----------|--------------|---------|
+| **Knowledge DB** | `/data22/zhangjunwei/knowledge_base/knowledge_base.db` | `train/train.sh` |  
+| **Training Output** | `/data22/zhangjunwei/knowrl_training/outputs/experiment_name/` | `train/script/grpo.yaml` |
+| **Base Models** | Auto-handled by `HF_HOME=/data22/public/huggingface` | Downloaded automatically |
+| **Training Data** | Uses existing `data/` directory in codebase | Already configured |
 
-# Move original data to storage and create symlink
-mv data /data22/zhangjunwei/datasets_original
-ln -s /data22/zhangjunwei/datasets_original data
-
-# Verify symlink works
-ls -la data/  # Should show contents from storage location
-```
-
-**Benefits**: Most configuration files won't need path changes.
-
-**Option 2: Direct Path Configuration (More Control)**
-
-You'll need to update multiple configuration files with absolute paths:
-
-```bash
-# Create server-specific config files
-cd ~/KnowRL/train/script/
-cp grpo.yaml grpo_server.yaml
-
-cd ~/KnowRL/train/
-cp train.sh train_server.sh
-```
-
-##### 1.5.4 Key Files to Update (Option 2 Only)
-
-**A. Main Training Configuration** (`train/script/grpo_server.yaml`):
-```yaml
-# Update these paths
-model_name_or_path: "/data22/zhangjunwei/models/base_models/deepseek-ai--DeepSeek-R1-Distill-Qwen-7B"
-output_dir: "/data22/zhangjunwei/experiment_outputs/knowrl_experiments/grpo_run1"  
-dataset_id_or_path: "/data22/zhangjunwei/datasets/rl/knowrl_RLdata.json"
-```
-
-**B. Environment Variables** (`train/train_server.sh`):
-```bash
-# Update knowledge base path
-export FACTSCORE_DB_PATH="/data22/zhangjunwei/knowledge_base/knowledge_base.db"
-
-# Update config file reference
-CONFIG_FILE="./script/grpo_server.yaml"
-```
-
-**C. Knowledge Base Build Script** (`train/reward_function/FActScore/build_knowledge/build_db.sh`):
-```bash
-# If building knowledge base from scratch
-DATA_PATH="/data22/zhangjunwei/datasets/raw/wikipedia.jsonl"
-DB_PATH="/data22/zhangjunwei/knowledge_base/knowledge_base.db"
-```
-
-##### 1.5.5 Data Migration Commands
-
-```bash
-# Set your storage root
-STORAGE_ROOT="/data22/zhangjunwei"
-
-# Copy datasets (if they exist in the repo)
-if [ -d "~/KnowRL/data/coldstart" ]; then
-    cp ~/KnowRL/data/coldstart/knowrl_coldstart.json $STORAGE_ROOT/datasets/coldstart/
-fi
-
-if [ -d "~/KnowRL/data/rl" ]; then  
-    cp ~/KnowRL/data/rl/knowrl_RLdata.json $STORAGE_ROOT/datasets/rl/
-fi
-
-# Create placeholders for models (will be downloaded later)
-echo "Base models will be downloaded here" > $STORAGE_ROOT/models/base_models/README.txt
-
-# Verify setup
-ls -la $STORAGE_ROOT/datasets/*/
-ls -la $STORAGE_ROOT/models/*/
-```
-
-##### 1.5.6 Environment Variables Setup (Alternative Approach)
-
-Add to your `~/.bashrc` for persistent configuration:
-```bash
-# Add these lines to ~/.bashrc
-export KNOWRL_DATA_ROOT="/data22/zhangjunwei"
-export KNOWRL_MODELS_ROOT="/data22/zhangjunwei/models"  
-export KNOWRL_DATASETS_ROOT="/data22/zhangjunwei/datasets"
-export KNOWRL_KB_ROOT="/data22/zhangjunwei/knowledge_base"
-
-# Apply changes
-source ~/.bashrc
-```
-
-Then reference in configuration files:
-```yaml
-# In grpo.yaml
-model_name_or_path: "${KNOWRL_MODELS_ROOT}/base_models/DeepSeek-R1-Distill-Qwen-7B"
-output_dir: "${KNOWRL_DATA_ROOT}/experiment_outputs/grpo_run1"
-dataset_id_or_path: "${KNOWRL_DATASETS_ROOT}/rl/knowrl_RLdata.json"
-```
-
-##### 1.5.7 Verification Commands
-
-```bash
-# Test data access
-ls -la /data22/zhangjunwei/datasets/rl/knowrl_RLdata.json
-
-# Test symlink (if using Option 1)
-ls -la ~/KnowRL/data/rl/knowrl_RLdata.json
-
-# Test environment variables (if using)
-echo "Data root: $KNOWRL_DATA_ROOT"
-echo "Models root: $KNOWRL_MODELS_ROOT"
-
-# Test write permissions
-touch /data22/zhangjunwei/test_write_permission.txt && rm /data22/zhangjunwei/test_write_permission.txt && echo "Write permission OK" || echo "Write permission FAILED"
-```
-
-**Important Notes for Later Steps**:
-- When downloading the knowledge base (Step 3), use: `cd /data22/zhangjunwei/knowledge_base/`
-- When configuring model paths (Step 4), use your storage paths
-- When running training, ensure all paths point to your storage location
-- Monitor storage space usage during training
+**No symlinks needed** - configuration files will be updated with direct paths in Step 4.
 
 ### Step 2: API Keys and Service Setup
 
@@ -546,24 +414,25 @@ You need **THREE** API keys:
 - Alternative: Use `wandb` by modifying configuration
 
 ### 2.2 Configure Environment Variables
-Edit `train/train.sh` with your API keys:
+Edit `train/train.sh` with your API keys and storage paths:
 
-**Replace placeholders with actual keys**:
+**Replace placeholders with actual keys and paths**:
 ```bash
 export OPENAI_API_KEY_FACTSCORE="sk-your-factscore-key-here"
 export OPENAI_API_KEY_JUDGE="sk-your-judge-key-here"  
 export SWANLAB_API_KEY="your-swanlab-key-here"
+
+# Knowledge base path (update to match your storage location)
+export FACTSCORE_DB_PATH="/data22/zhangjunwei/knowledge_base/knowledge_base.db"
 ```
 
 ### Step 3: Knowledge Base Setup
 
-**Important**: If you configured server storage in Step 1.5, download the knowledge base to your storage location instead of the default path.
-
 ### 3.1 Option 1: Download Pre-built Knowledge Base (Recommended)
 
-**For standard setup:**
 ```bash
-cd train/reward_function/FActScore/build_knowledge/
+# Download to server storage location (as configured in Step 1.7)
+cd /data22/zhangjunwei/knowledge_base/
 
 # Download pre-built knowledge base (1.2GB)
 gdown https://drive.google.com/uc?id=1EVFkzuFvqE8AOEcdfSSm03vvvbVDa7bI
@@ -571,22 +440,6 @@ gdown https://drive.google.com/uc?id=1EVFkzuFvqE8AOEcdfSSm03vvvbVDa7bI
 # Verify download
 ls -lh knowledge_base.db
 # Expected: ~1.2GB file size
-```
-
-**For server storage setup (if you completed Step 1.5):**
-```bash
-# Download to your storage location
-cd /data22/zhangjunwei/knowledge_base/  # Use your storage path
-
-# Download pre-built knowledge base (1.2GB)
-gdown https://drive.google.com/uc?id=1EVFkzuFvqE8AOEcdfSSm03vvvbVDa7bI
-
-# Verify download
-ls -lh knowledge_base.db
-# Expected: ~1.2GB file size
-
-# If using symlinks, create symlink in code location
-ln -s /data22/zhangjunwei/knowledge_base/knowledge_base.db ~/KnowRL/train/reward_function/FActScore/build_knowledge/knowledge_base.db
 ```
 
 ### 3.2 Option 2: Build Knowledge Base from Scratch
@@ -622,9 +475,8 @@ conn.close()
 
 ### Step 4: Configuration Customization
 
-**Important**: If you configured server storage in Step 1.5, use the server-specific config files and paths you created, or use the symlink approach for seamless configuration.
+### 4.1 Configure Training Paths in grpo.yaml
 
-### 4.1 Configure Model Paths in grpo.yaml
 ```bash
 cd train/script/
 cp grpo.yaml grpo.yaml.backup  # Create backup
@@ -632,34 +484,19 @@ nano grpo.yaml
 ```
 
 **Essential configurations to modify**:
-
-**For standard setup:**
 ```yaml
-# Line 2: Replace with your base model path
-model_name_or_path: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"  # HuggingFace model ID
+# Line 2: Base model (uses HF_HOME for automatic download)
+model_name_or_path: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
 
-# Line 10: Set your output directory  
-output_dir: "output/knowrl_model_run1"
+# Line 10: Output to server storage location
+output_dir: "/data22/zhangjunwei/knowrl_training/outputs/grpo_run1"
+
+# Line 13: Dataset path (uses existing data directory)
+dataset_id_or_path: "../data/rl/knowrl_RLdata.json"
 
 # Lines 17-18: Configure SwanLab project details
 swanlab_project: "knowrl_reproduction"
 swanlab_experiment_name: "run1"
-```
-
-**For server storage setup (edit grpo_server.yaml instead):**
-```yaml
-# Line 2: Use your storage paths
-model_name_or_path: "/data22/zhangjunwei/models/base_models/DeepSeek-R1-Distill-Qwen-7B"
-
-# Line 10: Output to storage location
-output_dir: "/data22/zhangjunwei/experiment_outputs/knowrl_experiments/grpo_run1"
-
-# Line 13: Update dataset path  
-dataset_id_or_path: "/data22/zhangjunwei/datasets/rl/knowrl_RLdata.json"
-
-# Lines 17-18: Configure SwanLab project details
-swanlab_project: "knowrl_reproduction" 
-swanlab_experiment_name: "server_run1"
 ```
 
 **For different hardware configurations**:
@@ -790,22 +627,12 @@ print('Knowledge base connection successful' if scorer.get_fact_scorer() else 'C
 
 ### 6.3 Run Knowledge RL Training
 
-**For standard setup:**
 ```bash
 # Start training
 bash train.sh
 
 # Monitor training in separate terminal  
-tail -f output/your_output_directory_name/trainer_log.jsonl
-```
-
-**For server storage setup:**
-```bash
-# Start training with server-specific configuration
-bash train_server.sh  # Uses grpo_server.yaml and storage paths
-
-# Monitor training in separate terminal
-tail -f /data22/zhangjunwei/experiment_outputs/knowrl_experiments/grpo_run1/trainer_log.jsonl
+tail -f /data22/zhangjunwei/knowrl_training/outputs/grpo_run1/trainer_log.jsonl
 
 # Monitor GPU usage
 watch -n 1 nvidia-smi

@@ -11,7 +11,7 @@ export SWANLAB_API_KEY="dgIXV7EsCZL3OMGq5lKvZ"
 # ============================================================================
 # Configuration
 # ============================================================================
-export FACTSCORE_DB_PATH="./FActScore/build_knowledge/knowledge_base.db"
+export FACTSCORE_DB_PATH="/data22/zhangjunwei/knowrl_knowledge_base/knowledge_base.db"
 export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
