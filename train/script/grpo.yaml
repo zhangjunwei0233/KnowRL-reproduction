@@ -10,7 +10,7 @@ tf32: true
 output_dir: "/data22/zhangjunwei/knowrl_training/outputs/test" # Please replace with your output directory
 
 # Dataset parameters
-dataset_id_or_path: ../data/rl/knowrl_RLdata.json 
+dataset_id_or_path: /home/zhangjunwei/KnowRL-reproduction/data/rl/knowrl_RLdata.json 
 
 # Swanlab parameters
 report_to: swanlab

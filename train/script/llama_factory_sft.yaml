@@ -11,7 +11,7 @@ lora_alpha: 512
 
 ### dataset
 dataset: knowrl_coldstart # e.g., knowrl_coldstart
-dataset_dir: ../../data/coldstart
+dataset_dir: home/zhangjunwei/KnowRL-reproduction/data/coldstart
 template: qwen
 cutoff_len: 3072
 overwrite_cache: true
