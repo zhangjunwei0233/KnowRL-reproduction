@@ -92,12 +92,12 @@ setup_environment() {
         
         echo "🔧 Installing PyTorch ecosystem with CUDA support..."
         echo "📦 Installing: $(wc -l < requirements-torch.txt) PyTorch packages"
-        pip install -r requirements-torch.txt --verbose --progress-bar pretty
+        pip install -r requirements-torch.txt --verbose --progress-bar on
         
         echo ""
         echo "📚 Installing main dependencies..."
         echo "📦 Installing: $(grep -v '^#' requirements-main.txt | grep -v '^$' | wc -l) packages"
-        pip install -r requirements-main.txt --verbose --progress-bar pretty
+        pip install -r requirements-main.txt --verbose --progress-bar on
         
         echo ""
         echo "✅ Installation complete at $(date)!"
