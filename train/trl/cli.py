@@ -31,7 +31,8 @@ def main():
     parser = TrlParser(prog="TRL CLI", usage="trl", allow_abbrev=False)
 
     # Add the subparsers
-    subparsers = parser.add_subparsers(help="available commands", dest="command", parser_class=TrlParser)
+    subparsers = parser.add_subparsers(
+        help="available commands", dest="command", parser_class=TrlParser)
 
     # Add the subparsers for every script
     make_chat_parser(subparsers)
@@ -50,7 +51,8 @@ def main():
 
     if args.command == "dpo":
         # Get the default args for the launch command
-        dpo_training_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "dpo.py")
+        dpo_training_script = os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "scripts", "dpo.py")
         args = launch_command_parser().parse_args([dpo_training_script])
 
         # Feed the args to the launch command
@@ -62,7 +64,8 @@ def main():
 
     elif args.command == "grpo":
         # Get the default args for the launch command
-        grpo_training_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "grpo.py")
+        grpo_training_script = os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "scripts", "grpo.py")
         args = launch_command_parser().parse_args([grpo_training_script])
 
         # Feed the args to the launch command
@@ -71,7 +74,8 @@ def main():
 
     elif args.command == "kto":
         # Get the default args for the launch command
-        kto_training_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "kto.py")
+        kto_training_script = os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "scripts", "kto.py")
         args = launch_command_parser().parse_args([kto_training_script])
 
         # Feed the args to the launch command
@@ -80,7 +84,8 @@ def main():
 
     elif args.command == "sft":
         # Get the default args for the launch command
-        sft_training_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "sft.py")
+        sft_training_script = os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "scripts", "sft.py")
         args = launch_command_parser().parse_args([sft_training_script])
 
         # Feed the args to the launch command

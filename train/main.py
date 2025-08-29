@@ -1,3 +1,10 @@
+from utils import create_swanlab_callback_from_yaml, setup_logging, get_default_config_path
+from reward_function import (
+    format_reward_func,
+    CombinedScorer,
+    get_reward_output_dir
+)
+from trl import GRPOConfig, GRPOTrainer, ModelConfig, TrlParser
 import unsloth
 import os
 from dataclasses import dataclass, field
@@ -9,20 +16,14 @@ from transformers.trainer_utils import get_last_checkpoint
 # Core GRPO imports
 from unsloth import FastLanguageModel, PatchFastRL
 PatchFastRL("GRPO", FastLanguageModel)
-from trl import GRPOConfig, GRPOTrainer, ModelConfig, TrlParser
 
 # Local imports
-from reward_function import (
-    format_reward_func,
-    CombinedScorer,
-    get_reward_output_dir
-)
-from utils import create_swanlab_callback_from_yaml, setup_logging, get_default_config_path
 
 # Setup logging
 logger = setup_logging()
 # Initialize reward scorers
 combined_reward = CombinedScorer()
+
 
 @dataclass
 class DatasetFieldMapping:
@@ -34,12 +35,15 @@ class DatasetFieldMapping:
     delimiter: str = ";"
     keep_all_fields: bool = False
 
+
 @dataclass
 class DatasetArguments:
     dataset_id_or_path: str = None
     dataset_splits: str = "train"
     tokenizer_name_or_path: str = None
-    field_mapping: DatasetFieldMapping = field(default_factory=DatasetFieldMapping)
+    field_mapping: DatasetFieldMapping = field(
+        default_factory=DatasetFieldMapping)
+
 
 def get_checkpoint(training_args: GRPOConfig):
     last_checkpoint = None
@@ -47,16 +51,17 @@ def get_checkpoint(training_args: GRPOConfig):
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
     return last_checkpoint
 
+
 def process_dataset_fields(example, field_mapping):
     processed = {}
-    
+
     question = example.get(field_mapping.question_field, "")
     processed["question"] = question
-    
+
     if field_mapping.title_field is not None:
         title = example.get(field_mapping.title_field, "")
         processed["title"] = title
-    
+
     if field_mapping.best_answer_field is not None:
         best_answer = example.get(field_mapping.best_answer_field, "")
         processed["best_answer"] = best_answer if best_answer else ""
@@ -65,15 +70,16 @@ def process_dataset_fields(example, field_mapping):
         for key, value in example.items():
             if key not in processed:
                 processed[key] = value
-                
+
     return processed
+
 
 def generate_prompt(example, tokenizer):
     question = example["question"]
-    
+
     prompt_prefix = [
         {
-            "role": "user", 
+            "role": "user",
             "content": f"{question}\n\nAnswer this question using the following format strictly:\n\n1. First use <think> </think> tags to show your step-by-step reasoning process.\n2. Then use <answer> </answer> tags for your final answer.\n\nExample format:\n<think>\nI need to consider these aspects...\nLooking at the evidence...\nAnalyzing step-by-step...\n</think>\n\n<answer>\nMy final, factual answer based on careful reasoning.\n</answer>\n\nImportant: Both tags must be on their own lines and your response must follow this exact format."
         },
         {
@@ -89,12 +95,13 @@ def generate_prompt(example, tokenizer):
             continue_final_message=True
         ),
     }
-    
+
     for key in ["best_answer", "title"]:
         if key in example:
             result[key] = example[key]
-    
+
     return result
+
 
 def grpo_function(
     model_args: ModelConfig,
@@ -115,7 +122,7 @@ def grpo_function(
         max_seq_length=2048,
         gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
         attn_implementation=model_args.attn_implementation,
-    ) 
+    )
 
     # Configure PEFT model
     model = FastLanguageModel.get_peft_model(
@@ -137,9 +144,9 @@ def grpo_function(
     # Load dataset
     try:
         dataset = load_dataset('json',
-            data_files=dataset_args.dataset_id_or_path, 
-            split=dataset_args.dataset_splits
-        )
+                               data_files=dataset_args.dataset_id_or_path,
+                               split=dataset_args.dataset_splits
+                               )
         logger.info(f"Successfully loaded dataset with {len(dataset)} samples")
     except Exception as e:
         logger.error(f"Failed to load dataset: {e}")
@@ -148,9 +155,10 @@ def grpo_function(
     logger.info(f"Dataset fields: {dataset.column_names}")
 
     field_mapping = dataset_args.field_mapping
-    
+
     if field_mapping.question_field not in dataset.column_names:
-        raise ValueError(f"Required question field '{field_mapping.question_field}' not found in dataset")
+        raise ValueError(
+            f"Required question field '{field_mapping.question_field}' not found in dataset")
 
     # Process dataset
     dataset = dataset.map(lambda x: process_dataset_fields(x, field_mapping))
@@ -160,7 +168,8 @@ def grpo_function(
     required_output_fields = ["prompt"]
     for field in required_output_fields:
         if field not in dataset.column_names:
-            raise ValueError(f"Required field '{field}' missing from processed dataset")
+            raise ValueError(
+                f"Required field '{field}' missing from processed dataset")
 
     # Print sample examples
     logger.info("Dataset sample examples:")
@@ -178,7 +187,8 @@ def grpo_function(
     rewards_output_dir = get_reward_output_dir()
 
     logger.info(f"Training set size: {len(train_dataset)}")
-    logger.info(f"Reward function outputs will be saved to: {os.path.abspath(rewards_output_dir)}")
+    logger.info(
+        f"Reward function outputs will be saved to: {os.path.abspath(rewards_output_dir)}")
 
     # Set up GRPO trainer
     trainer = GRPOTrainer(
@@ -200,7 +210,8 @@ def grpo_function(
 
     # Train model
     train_result = trainer.train(
-        resume_from_checkpoint=get_checkpoint(training_args) if training_args.resume_from_checkpoint else None
+        resume_from_checkpoint=get_checkpoint(
+            training_args) if training_args.resume_from_checkpoint else None
     )
 
     # Save metrics
@@ -212,31 +223,35 @@ def grpo_function(
 
     logger.info("*** Training completed ***")
     logger.info("*** Saving model ***")
-    
+
     # Save model and tokenizer
     trainer.model.config.use_cache = True
     model.save_pretrained(training_args.output_dir)
     logger.info(f"Model saved to {training_args.output_dir}")
     tokenizer.save_pretrained(training_args.output_dir)
     logger.info(f"Tokenizer saved to {training_args.output_dir}")
-    
+
     logger.info("*** Training process completed! ***")
+
 
 def main():
     parser = TrlParser((ModelConfig, DatasetArguments, GRPOConfig))
     model_args, dataset_args, training_args = parser.parse_args_and_config()
-    
+
     config_file_path = get_default_config_path()
     swanlab_callback = create_swanlab_callback_from_yaml(config_file_path)
-    
+
     if swanlab_callback:
-        logger.info("SwanLab callback created successfully. Training metrics will be logged to SwanLab.")
+        logger.info(
+            "SwanLab callback created successfully. Training metrics will be logged to SwanLab.")
         callbacks = [swanlab_callback]
     else:
-        logger.info("SwanLab callback creation failed or not enabled. Training will proceed without SwanLab logging.")
+        logger.info(
+            "SwanLab callback creation failed or not enabled. Training will proceed without SwanLab logging.")
         callbacks = None
 
     grpo_function(model_args, dataset_args, training_args, callbacks=callbacks)
+
 
 if __name__ == "__main__":
     main()

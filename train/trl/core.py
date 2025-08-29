@@ -29,7 +29,8 @@ def flatten_dict(nested: dict, sep: str = "/") -> dict:
     def recurse(nest: dict, prefix: str, into: dict) -> None:
         for k, v in nest.items():
             if sep in k:
-                raise ValueError(f"separator '{sep}' not allowed to be in key '{k}'")
+                raise ValueError(
+                    f"separator '{sep}' not allowed to be in key '{k}'")
             if isinstance(v, Mapping):
                 recurse(v, prefix + k + sep, into)
             else:
@@ -129,7 +130,8 @@ def randn_tensor(
     device = device or torch.device("cpu")
 
     if generator is not None:
-        gen_device_type = generator.device.type if not isinstance(generator, list) else generator[0].device.type
+        gen_device_type = generator.device.type if not isinstance(
+            generator, list) else generator[0].device.type
         if gen_device_type != device.type and gen_device_type == "cpu":
             rand_device = "cpu"
             if device != "mps":
@@ -140,7 +142,8 @@ def randn_tensor(
                     UserWarning,
                 )
         elif gen_device_type != device.type and gen_device_type == "cuda":
-            raise ValueError(f"Cannot generate a {device} tensor from a generator of type {gen_device_type}.")
+            raise ValueError(
+                f"Cannot generate a {device} tensor from a generator of type {gen_device_type}.")
 
     # make sure generator list of length 1 is treated like a non-list
     if isinstance(generator, list) and len(generator) == 1:
@@ -149,11 +152,13 @@ def randn_tensor(
     if isinstance(generator, list):
         shape = (1,) + shape[1:]
         latents = [
-            torch.randn(shape, generator=generator[i], device=rand_device, dtype=dtype, layout=layout)
+            torch.randn(
+                shape, generator=generator[i], device=rand_device, dtype=dtype, layout=layout)
             for i in range(batch_size)
         ]
         latents = torch.cat(latents, dim=0).to(device)
     else:
-        latents = torch.randn(shape, generator=generator, device=rand_device, dtype=dtype, layout=layout).to(device)
+        latents = torch.randn(shape, generator=generator,
+                              device=rand_device, dtype=dtype, layout=layout).to(device)
 
     return latents

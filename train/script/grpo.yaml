@@ -1,5 +1,5 @@
 # Model parameters
-model_name_or_path: "your_model_path/model_name" # Please replace with your model path
+model_name_or_path: "/data22/zhangjunwei/knowrl_training/models/sft_output/test-deepseek-r1-distilled-qwen-7b-sft" # Please replace with your model path
 model_revision: main
 torch_dtype: bfloat16
 lora_r: 256
@@ -7,20 +7,20 @@ lora_alpha: 512
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: "/data22/zhangjunwei/knowrl_training/outputs/experiment_name" # Please replace with your output directory
+output_dir: "/data22/zhangjunwei/knowrl_training/outputs/test" # Please replace with your output directory
 
 # Dataset parameters
 dataset_id_or_path: ../data/rl/knowrl_RLdata.json 
 
 # Swanlab parameters
 report_to: swanlab
-swanlab_project: "your_swanlab_project_name" # Please replace with your Swanlab project name
-swanlab_experiment_name:: "your_swanlab_experiment_name" # Please replace with your Swanlab experiment name
+swanlab_project: "knowrl_reproduction" # Please replace with your Swanlab project name
+swanlab_experiment_name: "test" # Please replace with your Swanlab experiment name
 
 # Training parameters
 max_steps: 150
-per_device_train_batch_size: 24
-gradient_accumulation_steps: 4
+per_device_train_batch_size: 12
+gradient_accumulation_steps: 8
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
