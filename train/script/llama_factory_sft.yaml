@@ -1,5 +1,5 @@
 model_name_or_path: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
-deepspeed: ../trl/accelerate_configs/deepspeed_zero3.yaml
+# deepspeed: ../trl/accelerate_configs/deepspeed_zero3.yaml
 
 ### method
 stage: sft
