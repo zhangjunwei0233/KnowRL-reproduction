@@ -151,6 +151,87 @@ print('🚀 Environment ready for KnowRL training!')
 "
 }
 
+# Function to verify environment only (no installation)
+verify_only() {
+    echo "🔍 KnowRL Environment Verification"
+    echo ""
+    
+    # Check conda
+    if ! command -v conda &> /dev/null; then
+        echo "❌ Conda not found. Please install conda/miniconda first."
+        return 1
+    fi
+    echo "✅ Conda found: $(conda --version)"
+    
+    # Check if knowrl environment exists
+    if ! conda info --envs | grep -q "knowrl"; then
+        echo "❌ Environment 'knowrl' not found."
+        echo "💡 Run: bash setup.sh pip  (to create it)"
+        return 1
+    fi
+    echo "✅ Environment 'knowrl' exists"
+    
+    # Activate and test
+    echo ""
+    echo "🧪 Testing package imports..."
+    
+    source "$(conda info --base)/etc/profile.d/conda.sh"
+    conda activate knowrl
+    
+    # Test with error handling
+    python -c "
+import sys
+import traceback
+
+def test_import(module_name, display_name=None):
+    if display_name is None:
+        display_name = module_name
+    try:
+        module = __import__(module_name)
+        if hasattr(module, '__version__'):
+            print(f'✅ {display_name}: {module.__version__}')
+        else:
+            print(f'✅ {display_name}: imported successfully')
+        return True
+    except ImportError as e:
+        print(f'❌ {display_name}: {e}')
+        return False
+
+print('🐍 Python version:', sys.version.split()[0])
+print()
+
+success = True
+success &= test_import('torch', 'PyTorch')
+success &= test_import('unsloth', 'Unsloth')  
+success &= test_import('transformers', 'Transformers')
+success &= test_import('datasets', 'Datasets')
+success &= test_import('peft', 'PEFT')
+success &= test_import('trl', 'TRL')
+
+if success:
+    # Additional CUDA check
+    try:
+        import torch
+        print()
+        print(f'🔥 CUDA available: {torch.cuda.is_available()}')
+        if torch.cuda.is_available():
+            print(f'🔥 CUDA devices: {torch.cuda.device_count()}')
+            for i in range(torch.cuda.device_count()):
+                print(f'🔥 Device {i}: {torch.cuda.get_device_name(i)}')
+    except:
+        pass
+    
+    print()
+    print('🎉 All core packages working!')
+    print('🚀 Environment ready for KnowRL training!')
+else:
+    print()
+    print('❌ Some packages missing. Try reinstalling:')
+    print('   bash setup.sh pip')
+    sys.exit(1)
+" || return 1
+}
+
 # Function to show help
 show_help() {
     echo "KnowRL Environment Setup Script"
@@ -159,15 +240,17 @@ show_help() {
     echo "  bash setup.sh [METHOD]"
     echo ""
     echo "Methods:"
-    echo "  conda  - Use conda environment.yml (most robust, slower)"
-    echo "  pip    - Use staged pip installation (faster, ~3-5 min)"
-    echo "  help   - Show this help message"
+    echo "  conda   - Use conda environment.yml (most robust, slower)"
+    echo "  pip     - Use staged pip installation (faster, ~3-5 min)"
+    echo "  verify  - Only verify existing installation (no setup)"
+    echo "  help    - Show this help message"
     echo ""
     echo "If no method specified, interactive mode will prompt you."
     echo ""
     echo "Examples:"
     echo "  bash setup.sh pip      # Fast installation"
     echo "  bash setup.sh conda    # Robust installation"
+    echo "  bash setup.sh verify   # Just check if environment works"
 }
 
 # Main execution
@@ -179,40 +262,46 @@ main() {
     
     if [ $# -eq 0 ]; then
         echo ""
-        echo "⚡ Choose installation method:"
+        echo "⚡ Choose option:"
         echo "   1. pip (recommended) - Fast staged installation (~3-5 minutes)"
         echo "   2. conda - Robust but slower (~10-15 minutes)"  
-        echo "   3. help - Show detailed help"
+        echo "   3. verify - Check existing environment (no installation)"
+        echo "   4. help - Show detailed help"
         echo ""
-        read -p "Enter choice (1/2/3): " choice
+        read -p "Enter choice (1/2/3/4): " choice
         
         case $choice in
             1) setup_environment "pip" ;;
             2) setup_environment "conda" ;;
-            3) show_help; exit 0 ;;
+            3) verify_only; exit $? ;;
+            4) show_help; exit 0 ;;
             *) echo "❌ Invalid choice. Use: bash setup.sh help"; exit 1 ;;
         esac
     else
         case "$1" in
             "help"|"-h"|"--help") show_help; exit 0 ;;
+            "verify") verify_only; exit $? ;;
             "conda"|"pip") setup_environment "$1" ;;
             *) echo "❌ Unknown option: $1"; show_help; exit 1 ;;
         esac
     fi
     
-    verify_installation
-    
-    # Calculate total time
-    end_time=$(date +%s)
-    total_time=$((end_time - start_time))
-    
-    echo ""
-    echo "🎊 Setup complete in ${total_time} seconds!"
-    echo ""
-    echo "📋 Next steps:"
-    echo "  1. conda activate knowrl"
-    echo "  2. Follow COMPLETE_REPRODUCTION_GUIDE.md for training"
-    echo "  3. Test with: python -c 'import torch; print(torch.cuda.is_available())'"
+    # Only run full verification after installation (not for verify-only mode)
+    if [ "$1" != "verify" ]; then
+        verify_installation
+        
+        # Calculate total time and show completion message
+        end_time=$(date +%s)
+        total_time=$((end_time - start_time))
+        
+        echo ""
+        echo "🎊 Setup complete in ${total_time} seconds!"
+        echo ""
+        echo "📋 Next steps:"
+        echo "  1. conda activate knowrl"
+        echo "  2. Follow COMPLETE_REPRODUCTION_GUIDE.md for training"
+        echo "  3. Test with: python -c 'import torch; print(torch.cuda.is_available())'"
+    fi
 }
 
 main "$@"
