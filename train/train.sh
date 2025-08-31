@@ -16,7 +16,7 @@ export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
 # Set GPU device
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+# export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 # HuggingFace cache configuration - use public cache for models
 export HF_HOME=/data22/public/huggingface
