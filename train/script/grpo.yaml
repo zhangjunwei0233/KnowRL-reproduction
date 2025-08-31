@@ -37,7 +37,7 @@ max_prompt_length: 128
 max_completion_length: 512
 num_generations: 6
 use_vllm: true
-vllm_gpu_memory_utilization: 0.2
+vllm_gpu_memory_utilization: 0.8
 
 # Logging parameters
 logging_strategy: steps
