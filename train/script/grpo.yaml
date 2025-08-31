@@ -33,11 +33,11 @@ seed: 42
 # GRPO algorithm parameters
 beta: 0.001
 optim: adamw_8bit
-max_prompt_length: 256
-max_completion_length: 1024
-num_generations: 12
+max_prompt_length: 128
+max_completion_length: 512
+num_generations: 6
 use_vllm: true
-vllm_gpu_memory_utilization: 0.3
+vllm_gpu_memory_utilization: 0.2
 
 # Logging parameters
 logging_strategy: steps

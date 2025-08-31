@@ -22,6 +22,9 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export HF_HOME=/data22/public/huggingface
 export HF_DATASETS_CACHE=/data22/zhangjunwei/huggingface/datasets
 
+# CUDA memory optimization
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 # Configuration file
 CONFIG_FILE="./script/grpo.yaml"
 
