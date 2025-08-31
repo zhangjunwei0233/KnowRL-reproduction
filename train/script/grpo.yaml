@@ -1,5 +1,6 @@
 # Model parameters
-model_name_or_path: "/data22/zhangjunwei/knowrl_training/models/sft_output/test-qwen2.5-7b-instruct-sft" # Please replace with your model path
+model_name_or_path: "Qwen/Qwen2.5-7B-Instruct" # Base model for vLLM
+adapter_path: "/data22/zhangjunwei/knowrl_training/models/sft_output/test-qwen2.5-7b-instruct-sft" # LoRA adapter path
 model_revision: main
 torch_dtype: bfloat16
 lora_r: 256
@@ -36,7 +37,7 @@ max_prompt_length: 256
 max_completion_length: 1024
 num_generations: 12
 use_vllm: true
-vllm_gpu_memory_utilization: 0.5
+vllm_gpu_memory_utilization: 0.3
 
 # Logging parameters
 logging_strategy: steps

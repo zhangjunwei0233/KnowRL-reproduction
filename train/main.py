@@ -13,6 +13,15 @@ from typing import List, Optional
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from transformers.trainer_utils import get_last_checkpoint
+
+
+@dataclass
+class ExtendedGRPOConfig(GRPOConfig):
+    """Extended GRPO config with additional parameters for LoRA adapter loading."""
+    adapter_path: Optional[str] = field(
+        default=None,
+        metadata={"help": "Path to existing LoRA adapters to load before training"}
+    )
 # Core GRPO imports
 from unsloth import FastLanguageModel, PatchFastRL
 PatchFastRL("GRPO", FastLanguageModel)
@@ -106,36 +115,61 @@ def generate_prompt(example, tokenizer):
 def grpo_function(
     model_args: ModelConfig,
     dataset_args: DatasetArguments,
-    training_args: GRPOConfig,
+    training_args: ExtendedGRPOConfig,
     callbacks: List,
 ):
     logger.info(f"Model parameters: {model_args}")
     logger.info(f"Training parameters: {training_args}")
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
 
-    # Load model and tokenizer
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=model_args.model_name_or_path,
-        fast_inference=True,
-        load_in_4bit=False,
-        max_lora_rank=model_args.lora_r,
-        max_seq_length=2048,
-        gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
-        attn_implementation=model_args.attn_implementation,
-    )
+    # Check if we have a separate adapter path
+    adapter_path = training_args.adapter_path
+    
+    if adapter_path and os.path.exists(adapter_path):
+        logger.info(f"Loading base model: {model_args.model_name_or_path}")
+        logger.info(f"Loading LoRA adapters from: {adapter_path}")
+        
+        # Load base model first
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=model_args.model_name_or_path,
+            fast_inference=True,
+            load_in_4bit=False,
+            max_lora_rank=model_args.lora_r,
+            max_seq_length=2048,
+            gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
+            attn_implementation=model_args.attn_implementation,
+        )
+        
+        # Load existing LoRA adapters
+        from peft import PeftModel
+        logger.info("Loading trained LoRA adapters...")
+        model = PeftModel.from_pretrained(model, adapter_path)
+        
+    else:
+        logger.info(f"Loading model directly from: {model_args.model_name_or_path}")
+        # Load model and tokenizer (original logic for merged models or base models)
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=model_args.model_name_or_path,
+            fast_inference=True,
+            load_in_4bit=False,
+            max_lora_rank=model_args.lora_r,
+            max_seq_length=2048,
+            gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
+            attn_implementation=model_args.attn_implementation,
+        )
 
-    # Configure PEFT model
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=model_args.lora_r,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ],
-        lora_alpha=model_args.lora_alpha,
-        use_gradient_checkpointing="unsloth",
-        random_state=training_args.seed,
-    )
+        # Configure PEFT model (for new training)
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=model_args.lora_r,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+            lora_alpha=model_args.lora_alpha,
+            use_gradient_checkpointing="unsloth",
+            random_state=training_args.seed,
+        )
 
     # Ensure tokenizer has padding token
     if tokenizer.pad_token is None:
@@ -235,7 +269,7 @@ def grpo_function(
 
 
 def main():
-    parser = TrlParser((ModelConfig, DatasetArguments, GRPOConfig))
+    parser = TrlParser((ModelConfig, DatasetArguments, ExtendedGRPOConfig))
     model_args, dataset_args, training_args = parser.parse_args_and_config()
 
     config_file_path = get_default_config_path()
