@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
 from datasets import load_dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.trainer_utils import get_last_checkpoint
 
 
@@ -129,9 +129,30 @@ def grpo_function(
         logger.info(f"Loading base model: {model_args.model_name_or_path}")
         logger.info(f"Loading LoRA adapters from: {adapter_path}")
         
+        # For cached models, use direct path to avoid unsloth name transformation
+        base_model_path = os.environ.get('HF_HOME', '/data22/public/huggingface')
+        model_cache_path = f"{base_model_path}/hub/models--{model_args.model_name_or_path.replace('/', '--')}"
+        
+        # Check if cached model exists, if so use local path
+        if os.path.exists(model_cache_path):
+            # Find the actual snapshot directory
+            snapshots_dir = f"{model_cache_path}/snapshots"
+            if os.path.exists(snapshots_dir):
+                snapshot_dirs = [d for d in os.listdir(snapshots_dir) if os.path.isdir(os.path.join(snapshots_dir, d))]
+                if snapshot_dirs:
+                    actual_model_path = os.path.join(snapshots_dir, snapshot_dirs[0])
+                    logger.info(f"Using cached model path: {actual_model_path}")
+                    model_name_to_use = actual_model_path
+                else:
+                    model_name_to_use = model_args.model_name_or_path
+            else:
+                model_name_to_use = model_args.model_name_or_path
+        else:
+            model_name_to_use = model_args.model_name_or_path
+        
         # Load base model first
         model, tokenizer = FastLanguageModel.from_pretrained(
-            model_name=model_args.model_name_or_path,
+            model_name=model_name_to_use,
             fast_inference=True,
             load_in_4bit=False,
             max_lora_rank=model_args.lora_r,
