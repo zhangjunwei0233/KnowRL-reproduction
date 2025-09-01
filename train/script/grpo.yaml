@@ -19,9 +19,9 @@ swanlab_project: "knowrl_reproduction" # Please replace with your Swanlab projec
 swanlab_experiment_name: "test" # Please replace with your Swanlab experiment name
 
 # Training parameters
-max_steps: 150
-per_device_train_batch_size: 12
-gradient_accumulation_steps: 8
+max_steps: 5
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 1
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
@@ -34,10 +34,10 @@ seed: 42
 beta: 0.001
 optim: adamw_8bit
 max_prompt_length: 128
-max_completion_length: 512
-num_generations: 4
+max_completion_length: 128
+num_generations: 1
 use_vllm: true
-vllm_gpu_memory_utilization: 0.45
+vllm_gpu_memory_utilization: 0.2
 vllm_enforce_eager: true
 
 # Logging parameters
