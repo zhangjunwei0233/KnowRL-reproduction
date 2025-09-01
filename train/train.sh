@@ -18,9 +18,9 @@ export USE_API_MANAGER_FOR_FACTSCORE=True
 # Set GPU device
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 
-# HuggingFace cache configuration - use public cache for models
-export HF_HOME=/home/jovyan/a100x4/KnowRL-reproduction-data/huggingface
-export HF_DATASETS_CACHE=/home/jovyan/a100x4/KnowRL-reproduction-data/huggingface/datasets
+# HuggingFace cache configuration - centralized cache for all projects
+export HF_HOME=/home/jovyan/a100x4/huggingface
+export HF_DATASETS_CACHE=/home/jovyan/a100x4/huggingface/datasets
 
 # CUDA memory optimization
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

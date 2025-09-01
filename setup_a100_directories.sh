@@ -14,7 +14,7 @@ DATA_DIR="$WORK_DIR/KnowRL-reproduction-data"
 echo "📁 Creating directory structure..."
 
 # Create main data directory structure
-mkdir -p "$DATA_DIR"/{knowledge_base,training,huggingface}
+mkdir -p "$DATA_DIR"/{knowledge_base,training}
 
 # Create training subdirectories  
 mkdir -p "$DATA_DIR/training"/{models,outputs,logs,checkpoints}
@@ -23,29 +23,29 @@ mkdir -p "$DATA_DIR/training/outputs"
 mkdir -p "$DATA_DIR/training/models/sft_output/deepseek-r1-distill-qwen-7b-sft"
 mkdir -p "$DATA_DIR/training/outputs/deepseek-r1-distill-qwen-7b-rl"
 
-# Create huggingface cache directories
-mkdir -p "$DATA_DIR/huggingface"/{datasets,models,cache}
+# Create general huggingface cache directories (shared across projects)
+mkdir -p "$WORK_DIR/huggingface"/{datasets,models,cache}
 
 echo "✅ Directory structure created!"
 echo ""
 echo "📋 Directory layout:"
 echo "├── $WORK_DIR/"
 echo "│   ├── DeepSeek-R1-Distill-Qwen-7B/          (model files - already exists)"
+echo "│   ├── huggingface/                           (shared HF cache for all projects)"
+echo "│   │   ├── datasets/"
+echo "│   │   ├── models/"
+echo "│   │   └── cache/"
 echo "│   └── KnowRL-reproduction-data/"
 echo "│       ├── knowledge_base/                    (FActScore database)"
-echo "│       ├── training/"
-echo "│       │   ├── models/"
-echo "│       │   │   ├── sft_output/"
-echo "│       │   │   │   └── deepseek-r1-distill-qwen-7b-sft/"
-echo "│       │   │   └── rl_output/"
-echo "│       │   ├── outputs/"
-echo "│       │   │   └── deepseek-r1-distill-qwen-7b-rl/"
-echo "│       │   ├── logs/"
-echo "│       │   └── checkpoints/"
-echo "│       └── huggingface/"
-echo "│           ├── datasets/"
+echo "│       └── training/"
 echo "│           ├── models/"
-echo "│           └── cache/"
+echo "│           │   ├── sft_output/"
+echo "│           │   │   └── deepseek-r1-distill-qwen-7b-sft/"
+echo "│           │   └── rl_output/"
+echo "│           ├── outputs/"
+echo "│           │   └── deepseek-r1-distill-qwen-7b-rl/"
+echo "│           ├── logs/"
+echo "│           └── checkpoints/"
 echo ""
 
 # Check if model directory exists
