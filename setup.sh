@@ -108,25 +108,32 @@ setup_environment() {
         
         # Check if environment exists
         if conda info --envs | grep -q knowrl; then
-            echo "⚠️  Environment 'knowrl' already exists. Remove it? (y/N)"
+            echo "✅ Environment 'knowrl' already exists. Continue installation? (Y/n)"
             read -r response
-            if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-                echo "🗑️  Removing existing environment..."
-                conda env remove -n knowrl --verbose
-            else
-                echo "Aborting setup."
-                exit 1
+            if [[ "$response" =~ ^([nN][oO]|[nN])$ ]]; then
+                echo "Setup canceled."
+                exit 0
             fi
+            echo "🔄 Continuing installation in existing environment..."
+            echo "💡 Tip: You can run this multiple times to resume installation"
+            echo "💡 Tip: You can switch networks/proxies between runs for faster downloads"
+            SKIP_ENV_CREATION=true
+        else
+            SKIP_ENV_CREATION=false
         fi
         
-        # Create base environment with CUDA toolkit for containerized environments  
-        echo "🐍 Creating base Python 3.12 environment..."
-        if [[ -z "$CUDA_HOME" ]]; then
-            echo "📦 Installing cudatoolkit-dev for DeepSpeed compilation in containerized environment..."
-            conda create -n knowrl python=3.12 cudatoolkit-dev -c conda-forge -y --verbose
+        # Create base environment with CUDA toolkit for containerized environments
+        if [[ "$SKIP_ENV_CREATION" == "false" ]]; then
+            echo "🐍 Creating base Python 3.12 environment..."
+            if [[ -z "$CUDA_HOME" ]]; then
+                echo "📦 Installing cudatoolkit-dev for DeepSpeed compilation in containerized environment..."
+                conda create -n knowrl python=3.12 cudatoolkit-dev -c conda-forge -y --verbose
+            else
+                echo "📦 Using existing system CUDA..."
+                conda create -n knowrl python=3.12 -y --verbose
+            fi
         else
-            echo "📦 Using existing system CUDA..."
-            conda create -n knowrl python=3.12 -y --verbose
+            echo "🔄 Using existing environment (skipping creation)..."
         fi
         
         # Activate environment and setup CUDA
