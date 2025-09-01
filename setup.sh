@@ -43,26 +43,30 @@ check_cuda_env() {
         return 1
     fi
     
-    # Check if CUDA_HOME is set
+    # Get GPU info
+    local gpu_info=$(nvidia-smi --query-gpu=name,count --format=csv,noheader,nounits | head -1)
+    echo "✅ GPU detected: $gpu_info"
+    
+    # Check if CUDA_HOME is set and valid
     if [[ -n "$CUDA_HOME" ]] && [[ -f "$CUDA_HOME/bin/nvcc" ]]; then
         echo "✅ CUDA_HOME already set: $CUDA_HOME"
         return 0
     fi
     
-    # Try to find CUDA installation
+    # Try to find system CUDA installation
     local cuda_paths=("/usr/local/cuda" "/usr/local/cuda-12" "/usr/local/cuda-11" "/opt/cuda")
     for path in "${cuda_paths[@]}"; do
         if [[ -d "$path" && -f "$path/bin/nvcc" ]]; then
             export CUDA_HOME="$path"
             export PATH="$CUDA_HOME/bin:$PATH" 
             export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$LD_LIBRARY_PATH"
-            echo "✅ Found CUDA at: $CUDA_HOME"
+            echo "✅ Found system CUDA at: $CUDA_HOME"
             return 0
         fi
     done
     
-    echo "⚠️  CUDA toolkit not found. DeepSpeed may fail to compile."
-    echo "💡 If you have CUDA installed, set CUDA_HOME manually before running this script."
+    echo "⚠️  System CUDA toolkit not found (common in containerized environments)."
+    echo "💡 Will install cudatoolkit-dev via conda during environment setup."
     return 1
 }
 
@@ -114,14 +118,29 @@ setup_environment() {
             fi
         fi
         
-        # Create base environment
+        # Create base environment with CUDA toolkit for containerized environments  
         echo "🐍 Creating base Python 3.12 environment..."
-        conda create -n knowrl python=3.12 -y --verbose
+        if [[ -z "$CUDA_HOME" ]]; then
+            echo "📦 Installing cudatoolkit-dev for DeepSpeed compilation in containerized environment..."
+            conda create -n knowrl python=3.12 cudatoolkit-dev -c conda-forge -y --verbose
+        else
+            echo "📦 Using existing system CUDA..."
+            conda create -n knowrl python=3.12 -y --verbose
+        fi
         
-        # Activate environment
+        # Activate environment and setup CUDA
         echo "🔌 Activating environment..."
         source "$(conda info --base)/etc/profile.d/conda.sh"
         conda activate knowrl
+        
+        # Setup CUDA environment for conda-installed toolkit
+        if [[ -z "$CUDA_HOME" ]] && [[ -f "$CONDA_PREFIX/bin/nvcc" ]]; then
+            echo "🔧 Setting up conda CUDA environment..."
+            export CUDA_HOME=$CONDA_PREFIX
+            export PATH=$CUDA_HOME/bin:$PATH
+            export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+            echo "✅ CUDA_HOME set to: $CUDA_HOME"
+        fi
         
         echo "🔧 Installing PyTorch ecosystem with CUDA support..."
         echo "📦 Installing: $(wc -l < requirements-torch.txt) PyTorch packages"
