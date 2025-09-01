@@ -40,7 +40,8 @@ check_cuda_env() {
     # Check NVIDIA driver
     if ! command -v nvidia-smi &> /dev/null; then
         echo "⚠️  nvidia-smi not found. CUDA training may not work."
-        return 1
+        echo "💡 Continuing setup - CUDA might still be available through runtime."
+        return 0  # Continue setup, don't exit
     fi
     
     # Get GPU info
@@ -67,7 +68,7 @@ check_cuda_env() {
     
     echo "⚠️  System CUDA toolkit not found (common in containerized environments)."
     echo "💡 Will install cudatoolkit-dev via conda during environment setup."
-    return 1
+    return 0  # This is expected in containerized environments, not an error
 }
 
 # Function to setup environment
