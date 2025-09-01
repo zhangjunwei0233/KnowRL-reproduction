@@ -141,6 +141,34 @@ setup_environment() {
             export PATH=$CUDA_HOME/bin:$PATH
             export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
             echo "✅ CUDA_HOME set to: $CUDA_HOME"
+            
+            # Create activation script so CUDA_HOME is set automatically on conda activate
+            echo "🔧 Creating conda activation script..."
+            mkdir -p $CONDA_PREFIX/etc/conda/activate.d
+            mkdir -p $CONDA_PREFIX/etc/conda/deactivate.d
+            
+            # Activation script
+            cat > $CONDA_PREFIX/etc/conda/activate.d/cuda_env.sh << 'EOF'
+#!/bin/bash
+# Auto-setup CUDA environment when activating knowrl conda environment
+if [[ -f "$CONDA_PREFIX/bin/nvcc" ]]; then
+    export CUDA_HOME=$CONDA_PREFIX
+    export PATH=$CUDA_HOME/bin:$PATH
+    export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+fi
+EOF
+            
+            # Deactivation script  
+            cat > $CONDA_PREFIX/etc/conda/deactivate.d/cuda_env.sh << 'EOF'
+#!/bin/bash
+# Clean up CUDA environment when deactivating
+unset CUDA_HOME
+# Note: PATH and LD_LIBRARY_PATH will be restored by conda automatically
+EOF
+            
+            chmod +x $CONDA_PREFIX/etc/conda/activate.d/cuda_env.sh
+            chmod +x $CONDA_PREFIX/etc/conda/deactivate.d/cuda_env.sh
+            echo "✅ Conda activation script created - CUDA_HOME will be set automatically"
         fi
         
         echo "🔧 Installing PyTorch ecosystem with CUDA support..."
