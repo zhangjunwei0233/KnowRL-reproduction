@@ -15,8 +15,12 @@ export FACTSCORE_DB_PATH="/home/jovyan/a100x4/KnowRL-reproduction-data/knowledge
 export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
-# Set GPU device
+# Set GPU device and force distributed training
 export CUDA_VISIBLE_DEVICES=0,1,2,3
+export ACCELERATE_USE_FSDP=false
+export WORLD_SIZE=4
+export MASTER_ADDR=127.0.0.1
+export MASTER_PORT=29500
 
 # HuggingFace cache configuration - centralized cache for all projects
 export HF_HOME=/home/jovyan/a100x4/huggingface
