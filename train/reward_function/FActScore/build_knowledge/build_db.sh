@@ -1,6 +1,6 @@
 
 DATA_PATH="./data/your_data_file.json"  # Your JSON/JSONL data file
-DB_PATH="~/a100x4/KnowRL-reproduction-data/knowledge_base/knowledge_base.db"           # Output database path
+DB_PATH="/home/jovyan/a100x4/KnowRL-reproduction-data/knowledge_base/knowledge_base.db"           # Output database path
 BATCH_SIZE=10000                        # Processing batch size
 MAX_DOCS=""                             # Max documents (empty = all)
 MAX_TOKEN_LENGTH=450                    # Token length limit

@@ -11,7 +11,7 @@ export SWANLAB_API_KEY="dgIXV7EsCZL3OMGq5lKvZ"
 # ============================================================================
 # Configuration
 # ============================================================================
-export FACTSCORE_DB_PATH="~/a100x4/KnowRL-reproduction-data/knowledge_base/knowledge_base.db"
+export FACTSCORE_DB_PATH="/home/jovyan/a100x4/KnowRL-reproduction-data/knowledge_base/knowledge_base.db"
 export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
@@ -19,8 +19,8 @@ export USE_API_MANAGER_FOR_FACTSCORE=True
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # HuggingFace cache configuration - use public cache for models
-export HF_HOME=~/a100x4/KnowRL-reproduction-data/huggingface
-export HF_DATASETS_CACHE=~/a100x4/KnowRL-reproduction-data/huggingface/datasets
+export HF_HOME=/home/jovyan/a100x4/KnowRL-reproduction-data/huggingface
+export HF_DATASETS_CACHE=/home/jovyan/a100x4/KnowRL-reproduction-data/huggingface/datasets
 
 # CUDA memory optimization
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
