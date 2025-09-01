@@ -1,6 +1,6 @@
 # Model parameters
-model_name_or_path: "Qwen/Qwen2.5-7B-Instruct" # Base model for vLLM
-adapter_path: "/data22/zhangjunwei/knowrl_training/models/sft_output/test-qwen2.5-7b-instruct-sft" # LoRA adapter path
+model_name_or_path: "~/a100x4/DeepSeek-R1-Distill-Qwen-7B" # Base model for vLLM
+adapter_path: "~/a100x4/KnowRL-reproduction-data/training/models/sft_output/deepseek-r1-distill-qwen-7b-sft" # LoRA adapter path
 model_revision: main
 torch_dtype: bfloat16
 lora_r: 256
@@ -8,7 +8,7 @@ lora_alpha: 512
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: "/data22/zhangjunwei/knowrl_training/outputs/qwen2.5-7b-instruct-rl" # Please replace with your output directory
+output_dir: "~/a100x4/KnowRL-reproduction-data/training/outputs/deepseek-r1-distill-qwen-7b-rl" # Please replace with your output directory
 
 # Dataset parameters
 dataset_id_or_path: /home/zhangjunwei/KnowRL-reproduction/data/rl/knowrl_RLdata.json 

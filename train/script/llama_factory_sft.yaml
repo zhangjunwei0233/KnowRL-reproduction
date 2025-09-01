@@ -1,4 +1,4 @@
-model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+model_name_or_path: ~/a100x4/DeepSeek-R1-Distill-Qwen-7B
 # deepspeed: ../trl/accelerate_configs/deepspeed_zero3.yaml
 
 ### method
@@ -11,14 +11,14 @@ lora_alpha: 512
 
 ### dataset
 dataset: knowrl_coldstart # e.g., knowrl_coldstart
-dataset_dir: /home/zhangjunwei/KnowRL-reproduction/data/coldstart
+dataset_dir: /home/jovyan/KnowRL-reproduction/data/coldstart
 template: qwen
 cutoff_len: 3072
 overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### output
-output_dir: /data22/zhangjunwei/knowrl_training/models/sft_output/test-qwen2.5-7b-instruct-sft # e.g., /adapter-saves/MyModel-SFT
+output_dir: ~/a100x4/KnowRL-reproduction-data/training/models/sft_output/deepseek-r1-distill-qwen-7b-sft # e.g., /adapter-saves/MyModel-SFT
 logging_steps: 10
 save_steps: 500
 plot_loss: true
