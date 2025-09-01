@@ -28,7 +28,7 @@ save_strategy: 'steps'
 ### experiment tracking
 report_to: swanlab
 swanlab_project: "knowrl_reproduction_a100"  # Explicit project name
-swanlab_experiment_name: "deepseek-r1-7b-coldstart-sft"  # Explicit experiment name
+run_name: "deepseek-r1-7b-coldstart-sft"  # Explicit experiment name
 
 ### train
 per_device_train_batch_size: 1
