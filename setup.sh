@@ -33,6 +33,39 @@ check_conda() {
     echo "✅ Conda found: $(conda --version)"
 }
 
+# Function to check and setup CUDA environment
+check_cuda_env() {
+    echo "🔍 Checking CUDA environment..."
+    
+    # Check NVIDIA driver
+    if ! command -v nvidia-smi &> /dev/null; then
+        echo "⚠️  nvidia-smi not found. CUDA training may not work."
+        return 1
+    fi
+    
+    # Check if CUDA_HOME is set
+    if [[ -n "$CUDA_HOME" ]] && [[ -f "$CUDA_HOME/bin/nvcc" ]]; then
+        echo "✅ CUDA_HOME already set: $CUDA_HOME"
+        return 0
+    fi
+    
+    # Try to find CUDA installation
+    local cuda_paths=("/usr/local/cuda" "/usr/local/cuda-12" "/usr/local/cuda-11" "/opt/cuda")
+    for path in "${cuda_paths[@]}"; do
+        if [[ -d "$path" && -f "$path/bin/nvcc" ]]; then
+            export CUDA_HOME="$path"
+            export PATH="$CUDA_HOME/bin:$PATH" 
+            export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$LD_LIBRARY_PATH"
+            echo "✅ Found CUDA at: $CUDA_HOME"
+            return 0
+        fi
+    done
+    
+    echo "⚠️  CUDA toolkit not found. DeepSpeed may fail to compile."
+    echo "💡 If you have CUDA installed, set CUDA_HOME manually before running this script."
+    return 1
+}
+
 # Function to setup environment
 setup_environment() {
     echo "📦 Creating conda environment..."
@@ -259,6 +292,7 @@ main() {
     start_time=$(date +%s)
     
     check_conda
+    check_cuda_env  # Check CUDA environment for DeepSpeed compilation
     
     if [ $# -eq 0 ]; then
         echo ""

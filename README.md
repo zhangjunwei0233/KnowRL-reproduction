@@ -27,11 +27,18 @@
 
 
 ## 🌻Acknowledgement
-Our Cold-Start SFT stage is implemented based on the excellent [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) framework. Our reinforcement learning training code is based on [TRL](https://github.com/huggingface/trl) and [Unsloth](https://github.com/unslothai/unsloth). We thank all authors for their great contributions!
+Our Cold-Start SFT stage is implemented based on the excellent [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) framework.
+Our reinforcement learning training code is based on [TRL](https://github.com/huggingface/trl) and [Unsloth](https://github.com/unslothai/unsloth). We thank all authors for their great contributions!
 ![alt text](./assets/method.jpg)
 
 ## 🌟Overview
-Large Language Models (LLMs), particularly slow-thinking models, often exhibit severe hallucinations due to an inability to accurately recognize their knowledge boundaries. To address this, we propose **KnowRL**, a novel framework that integrates external knowledge into the reinforcement learning process. KnowRL guides models to perform fact-based slow thinking by incorporating a factuality reward directly into the RL training loop. KnowRL can be seen as leveraging a form of test-time scaling law to reduce hallucinations. This helps models learn their knowledge boundaries and fosters a more reliable, fact-based reasoning process, effectively mitigating hallucinations while maintaining or enhancing strong reasoning capabilities.
+Large Language Models (LLMs), particularly slow-thinking models, often exhibit severe hallucinations
+due to an inability to accurately recognize their knowledge boundaries. To address this, we propose **KnowRL**,
+a novel framework that integrates external knowledge into the reinforcement learning process.
+KnowRL guides models to perform fact-based slow thinking by incorporating a factuality reward directly into the RL training loop.
+KnowRL can be seen as leveraging a form of test-time scaling law to reduce hallucinations. This helps models
+learn their knowledge boundaries and fosters a more reliable, fact-based reasoning process, effectively mitigating
+hallucinations while maintaining or enhancing strong reasoning capabilities.
 
 ## 🔧Installation
 We recommend creating a new conda environment to run our project.
@@ -138,7 +145,7 @@ To run the SFT, you would use a command like:
 CUDA_VISIBLE_DEVICES=0,1,2,3 llama-factory-cli train llama_factory_sft.yaml
 ```
 
-### Stage 2: Knowledgeable Reinforcement Learning 
+### Stage 2: Knowledgeable Reinforcement Learning
 This stage uses the SFT-tuned model and further trains it with our knowledge-enhanced reward signal. The process is orchestrated by `train/train.sh`,
 which launches `main.py` using the configuration defined in `script/grpo.yaml`. We are training two 7B models, `DeepSeek-R1-Distill-Qwen-7B` and `Skywork-OR1-7B-Preview`, on 1×A800 GPU.
 
