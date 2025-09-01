@@ -15,8 +15,9 @@ export FACTSCORE_DB_PATH="/home/jovyan/a100x4/KnowRL-reproduction-data/knowledge
 export USE_API_MANAGER_FOR_LLM_EVAL=True
 export USE_API_MANAGER_FOR_FACTSCORE=True
 
-# Set GPU device
+# Set GPU device and CPU threading
 export CUDA_VISIBLE_DEVICES=0,1,2,3
+export OMP_NUM_THREADS=12
 
 # HuggingFace cache configuration - centralized cache for all projects
 export HF_HOME=/home/jovyan/a100x4/huggingface
@@ -35,7 +36,9 @@ echo "Starting GRPO training..."
 echo "Config: $CONFIG_FILE"
 echo "GPU: $CUDA_VISIBLE_DEVICES"
 
-python main.py --config "$CONFIG_FILE"
+# Set accelerate config and launch distributed training
+export ACCELERATE_CONFIG_FILE="./script/accelerate_config.yaml"
+accelerate launch --config_file ./script/accelerate_config.yaml main.py --config "$CONFIG_FILE"
 
 if [ $? -eq 0 ]; then
     echo "✅ Training completed successfully!"
