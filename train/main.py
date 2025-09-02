@@ -167,25 +167,20 @@ def grpo_function(
             attn_implementation=model_args.attn_implementation,
         )
 
-        # Load existing LoRA adapters (these become part of the "base" model)
-        from peft import PeftModel
-        logger.info("Loading trained SFT LoRA adapters...")
-        model = PeftModel.from_pretrained(model, adapter_path)
-
-        # Enable training mode on the loaded SFT LoRA parameters for continued RL training
-        logger.info("Enabling training mode on SFT LoRA parameters for RL optimization...")
-        model.train()
-        trainable_params = 0
-        total_params = 0
-        for name, param in model.named_parameters():
-            total_params += param.numel()
-            # Enable gradients only on LoRA parameters (continue SFT LoRA training with RL rewards)
-            if "lora_" in name.lower() or "adapter" in name.lower():
-                param.requires_grad = True
-                trainable_params += param.numel()
-            else:
-                param.requires_grad = False
-        logger.info(f"Trainable LoRA parameters: {trainable_params:,} / {total_params:,} ({100 * trainable_params / total_params:.2f}%)")
+        # Configure PEFT model to continue training existing LoRA adapters
+        # vLLM will load the LoRA adapters from adapter_path automatically
+        logger.info("Configuring PEFT model for LoRA continuation training...")
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=model_args.lora_r,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+            lora_alpha=model_args.lora_alpha,
+            use_gradient_checkpointing="unsloth",
+            random_state=training_args.seed,
+        )
 
     else:
         logger.info(
