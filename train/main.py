@@ -167,20 +167,9 @@ def grpo_function(
             attn_implementation=model_args.attn_implementation,
         )
 
-        # Configure PEFT model to continue training existing LoRA adapters
-        # vLLM will load the LoRA adapters from adapter_path automatically
-        logger.info("Configuring PEFT model for LoRA continuation training...")
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=model_args.lora_r,
-            target_modules=[
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "gate_proj", "up_proj", "down_proj",
-            ],
-            lora_alpha=model_args.lora_alpha,
-            use_gradient_checkpointing="unsloth",
-            random_state=training_args.seed,
-        )
+        # Let GRPO trainer + vLLM handle LoRA loading from adapter_path
+        # Don't add LoRA layers here - vLLM will load them dynamically
+        logger.info("Base model loaded. GRPO trainer will handle LoRA loading from adapter_path during training.")
 
     else:
         logger.info(
