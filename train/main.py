@@ -1,3 +1,4 @@
+from unsloth import FastLanguageModel, PatchFastRL
 from utils import create_swanlab_callback_from_yaml, setup_logging, get_default_config_path
 from reward_function import (
     format_reward_func,
@@ -22,8 +23,9 @@ class ExtendedGRPOConfig(GRPOConfig):
         default=None,
         metadata={"help": "Path to existing LoRA adapters to load before training"}
     )
+
+
 # Core GRPO imports
-from unsloth import FastLanguageModel, PatchFastRL
 PatchFastRL("GRPO", FastLanguageModel)
 
 # Local imports
@@ -124,24 +126,28 @@ def grpo_function(
 
     # Check if we have a separate adapter path
     adapter_path = training_args.adapter_path
-    
+
     if adapter_path and os.path.exists(adapter_path):
         logger.info(f"Loading base model: {model_args.model_name_or_path}")
         logger.info(f"Loading LoRA adapters from: {adapter_path}")
-        
+
         # For cached models, use direct path to avoid unsloth name transformation
-        base_model_path = os.environ.get('HF_HOME', '/data22/public/huggingface')
+        base_model_path = os.environ.get(
+            'HF_HOME', '/data22/public/huggingface')
         model_cache_path = f"{base_model_path}/hub/models--{model_args.model_name_or_path.replace('/', '--')}"
-        
+
         # Check if cached model exists, if so use local path
         if os.path.exists(model_cache_path):
             # Find the actual snapshot directory
             snapshots_dir = f"{model_cache_path}/snapshots"
             if os.path.exists(snapshots_dir):
-                snapshot_dirs = [d for d in os.listdir(snapshots_dir) if os.path.isdir(os.path.join(snapshots_dir, d))]
+                snapshot_dirs = [d for d in os.listdir(
+                    snapshots_dir) if os.path.isdir(os.path.join(snapshots_dir, d))]
                 if snapshot_dirs:
-                    actual_model_path = os.path.join(snapshots_dir, snapshot_dirs[0])
-                    logger.info(f"Using cached model path: {actual_model_path}")
+                    actual_model_path = os.path.join(
+                        snapshots_dir, snapshot_dirs[0])
+                    logger.info(
+                        f"Using cached model path: {actual_model_path}")
                     model_name_to_use = actual_model_path
                 else:
                     model_name_to_use = model_args.model_name_or_path
@@ -149,7 +155,7 @@ def grpo_function(
                 model_name_to_use = model_args.model_name_or_path
         else:
             model_name_to_use = model_args.model_name_or_path
-        
+
         # Load base model first
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=model_name_to_use,
@@ -160,14 +166,29 @@ def grpo_function(
             gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
             attn_implementation=model_args.attn_implementation,
         )
-        
-        # Load existing LoRA adapters
+
+        # Load existing LoRA adapters (these become part of the "base" model)
         from peft import PeftModel
-        logger.info("Loading trained LoRA adapters...")
+        logger.info("Loading trained SFT LoRA adapters...")
         model = PeftModel.from_pretrained(model, adapter_path)
-        
+
+        # Add NEW trainable LoRA layers for RL training on top of SFT model
+        logger.info("Adding new trainable LoRA layers for RL training...")
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=model_args.lora_r,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+            lora_alpha=model_args.lora_alpha,
+            use_gradient_checkpointing="unsloth",
+            random_state=training_args.seed,
+        )
+
     else:
-        logger.info(f"Loading model directly from: {model_args.model_name_or_path}")
+        logger.info(
+            f"Loading model directly from: {model_args.model_name_or_path}")
         # Load model and tokenizer (original logic for merged models or base models)
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=model_args.model_name_or_path,

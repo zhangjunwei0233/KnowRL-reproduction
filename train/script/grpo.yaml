@@ -20,7 +20,7 @@ swanlab_experiment_name: "test" # Please replace with your Swanlab experiment na
 
 # Training parameters
 max_steps: 5
-per_device_train_batch_size: 1
+per_device_train_batch_size: 2
 gradient_accumulation_steps: 1
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
@@ -35,10 +35,10 @@ beta: 0.001
 optim: adamw_8bit
 max_prompt_length: 128
 max_completion_length: 128
-num_generations: 1
+num_generations: 2
 use_vllm: true
-vllm_gpu_memory_utilization: 0.2
-vllm_enforce_eager: true
+vllm_gpu_memory_utilization: 0.4
+vllm_enforce_eager: false
 
 # Logging parameters
 logging_strategy: steps
