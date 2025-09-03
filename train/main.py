@@ -113,7 +113,7 @@ def grpo_function(
     logger.info(f"Training parameters: {training_args}")
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
 
-    # Load model and tokenizer
+    # Load base model and tokenizer
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_args.model_name_or_path,
         fast_inference=True,
@@ -124,18 +124,29 @@ def grpo_function(
         attn_implementation=model_args.attn_implementation,
     )
 
-    # Configure PEFT model
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=model_args.lora_r,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ],
-        lora_alpha=model_args.lora_alpha,
-        use_gradient_checkpointing="unsloth",
-        random_state=training_args.seed,
-    )
+    # Load existing LoRA adapter if provided, otherwise create new LoRA
+    adapter_path = getattr(training_args, 'adapter_path', None)
+    if adapter_path and os.path.exists(adapter_path):
+        logger.info(f"Loading cold-start LoRA from {adapter_path}")
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, adapter_path)
+
+        # Set only LoRA parameters to be trainable
+        for name, param in model.named_parameters():
+            param.requires_grad = "lora_" in name.lower()
+    else:
+        logger.info("No adapter_path provided, creating new LoRA")
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=model_args.lora_r,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+            lora_alpha=model_args.lora_alpha,
+            use_gradient_checkpointing="unsloth",
+            random_state=training_args.seed,
+        )
 
     # Ensure tokenizer has padding token
     if tokenizer.pad_token is None:
