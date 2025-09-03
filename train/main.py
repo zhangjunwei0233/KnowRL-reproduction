@@ -137,7 +137,7 @@ def grpo_function(
         **model_loading_kwargs)
 
     # Load existing LoRA adapter if provided, otherwise create new LoRA
-    adapter_path = getattr(training_args, 'adapter_path', None)
+    adapter_path = getattr(training_args, 'adapter_path', None) or getattr(model_args, 'adapter_path', None)
     if adapter_path and os.path.exists(adapter_path):
         logger.info(f"Loading cold-start LoRA from {adapter_path}")
         from peft import PeftModel
