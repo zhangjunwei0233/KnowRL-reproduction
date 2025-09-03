@@ -113,9 +113,6 @@ def grpo_function(
     logger.info(f"Model parameters: {model_args}")
     logger.info(f"Training parameters: {training_args}")
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
-    logger.info(f"DEBUG - training_args has adapter_path: {hasattr(training_args, 'adapter_path')}")
-    logger.info(f"DEBUG - model_args has adapter_path: {hasattr(model_args, 'adapter_path')}")
-    logger.info(f"DEBUG - dataset_args has adapter_path: {hasattr(dataset_args, 'adapter_path')}")
 
     # Load base model and tokenizer
     model_loading_kwargs = {

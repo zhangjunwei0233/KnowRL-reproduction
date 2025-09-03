@@ -35,9 +35,7 @@ echo "Starting GRPO training..."
 echo "Config: $CONFIG_FILE"
 echo "GPU: $CUDA_VISIBLE_DEVICES"
 
-torchrun --nproc_per_node=4 \
-  main.py \
-  --config "$CONFIG_FILE"
+python main.py --config "$CONFIG_FILE"
 
 # python main.py --config "$CONFIG_FILE"
 
