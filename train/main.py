@@ -41,6 +41,7 @@ class DatasetArguments:
     dataset_id_or_path: str = None
     dataset_splits: str = "train"
     tokenizer_name_or_path: str = None
+    adapter_path: Optional[str] = None
     field_mapping: DatasetFieldMapping = field(
         default_factory=DatasetFieldMapping)
 
@@ -112,6 +113,9 @@ def grpo_function(
     logger.info(f"Model parameters: {model_args}")
     logger.info(f"Training parameters: {training_args}")
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
+    logger.info(f"DEBUG - training_args has adapter_path: {hasattr(training_args, 'adapter_path')}")
+    logger.info(f"DEBUG - model_args has adapter_path: {hasattr(model_args, 'adapter_path')}")
+    logger.info(f"DEBUG - dataset_args has adapter_path: {hasattr(dataset_args, 'adapter_path')}")
 
     # Load base model and tokenizer
     model_loading_kwargs = {
@@ -137,7 +141,7 @@ def grpo_function(
         **model_loading_kwargs)
 
     # Load existing LoRA adapter if provided, otherwise create new LoRA
-    adapter_path = getattr(training_args, 'adapter_path', None) or getattr(model_args, 'adapter_path', None)
+    adapter_path = getattr(training_args, 'adapter_path', None) or getattr(model_args, 'adapter_path', None) or getattr(dataset_args, 'adapter_path', None)
     if adapter_path and os.path.exists(adapter_path):
         logger.info(f"Loading cold-start LoRA from {adapter_path}")
         from peft import PeftModel
