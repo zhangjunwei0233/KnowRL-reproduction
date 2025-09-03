@@ -37,7 +37,7 @@ echo "GPU: $CUDA_VISIBLE_DEVICES"
 
 torchrun --nproc_per_node=4 \
   main.py \
-  --config_file "$CONFIG_FILE"
+  --config "$CONFIG_FILE"
 
 # python main.py --config "$CONFIG_FILE"
 
