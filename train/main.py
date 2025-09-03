@@ -115,51 +115,107 @@ def grpo_function(
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
 
     # Load base model and tokenizer
-    model_loading_kwargs = {
-        "model_name": model_args.model_name_or_path,
-        "load_in_4bit": False,
-        "max_lora_rank": model_args.lora_r,
-        "max_seq_length": 2048,
-        "attn_implementation": model_args.attn_implementation,
-    }
+    # Use native transformers loading when DeepSpeed is enabled (avoids Unsloth conflicts)
+    if getattr(training_args, 'deepspeed', None):
+        logger.info(
+            "Using native transformers loading for DeepSpeed compatibility")
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    # Load vllm paras only when 'use_vllm' is set
-    if getattr(training_args, 'use_vllm', True):
-        model_loading_kwargs.update({
-            "fast_inference": True,
-            "gpu_memory_utilization": training_args.vllm_gpu_memory_utilization,
-        })
-        logger.info("Loading model with vLLM enabled")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            torch_dtype=getattr(model_args, 'torch_dtype', 'auto'),
+            attn_implementation=model_args.attn_implementation,
+            low_cpu_mem_usage=False,      # 关闭以兼容DeepSpeed ZeRO-3
+            device_map=None,              # 关闭以兼容DeepSpeed ZeRO-3
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_args.model_name_or_path)
     else:
-        model_loading_kwargs["fast_inference"] = False
-        logger.info("Loading model with vLLM disabled for multi-GPU training")
+        # Original Unsloth loading for non-DeepSpeed cases
+        model_loading_kwargs = {
+            "model_name": model_args.model_name_or_path,
+            "load_in_4bit": False,
+            "max_lora_rank": model_args.lora_r,
+            "max_seq_length": 2048,
+            "attn_implementation": model_args.attn_implementation,
+        }
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        **model_loading_kwargs)
+        # Load vllm paras only when 'use_vllm' is set
+        if getattr(training_args, 'use_vllm', True):
+            model_loading_kwargs.update({
+                "fast_inference": True,
+                "gpu_memory_utilization": training_args.vllm_gpu_memory_utilization,
+            })
+            logger.info("Loading model with vLLM enabled")
+        else:
+            model_loading_kwargs["fast_inference"] = False
+            logger.info(
+                "Loading model with vLLM disabled for multi-GPU training")
+
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            **model_loading_kwargs)
 
     # Load existing LoRA adapter if provided, otherwise create new LoRA
-    adapter_path = getattr(training_args, 'adapter_path', None) or getattr(model_args, 'adapter_path', None) or getattr(dataset_args, 'adapter_path', None)
-    if adapter_path and os.path.exists(adapter_path):
-        logger.info(f"Loading cold-start LoRA from {adapter_path}")
-        from peft import PeftModel
-        model = PeftModel.from_pretrained(model, adapter_path)
+    adapter_path = getattr(training_args, 'adapter_path', None) or getattr(
+        model_args, 'adapter_path', None) or getattr(dataset_args, 'adapter_path', None)
 
-        # Set only LoRA parameters to be trainable
-        for name, param in model.named_parameters():
-            param.requires_grad = "lora_" in name.lower()
+    if getattr(training_args, 'deepspeed', None):
+        # DeepSpeed-compatible LoRA handling
+        if adapter_path and os.path.exists(adapter_path):
+            logger.info(
+                f"Loading cold-start LoRA from {adapter_path} with DeepSpeed")
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, adapter_path)
+
+            # Set only LoRA parameters to be trainable
+            for name, param in model.named_parameters():
+                param.requires_grad = "lora_" in name.lower()
+
+            # 手动开启gradient checkpointing (DeepSpeed模式下需要)
+            if getattr(training_args, 'gradient_checkpointing', True):
+                model.gradient_checkpointing_enable()
+        else:
+            logger.info(
+                "No adapter_path provided, creating new LoRA with DeepSpeed")
+            from peft import LoraConfig, get_peft_model
+
+            lora_config = LoraConfig(
+                r=getattr(model_args, 'lora_r', 256),
+                lora_alpha=getattr(model_args, 'lora_alpha', 512),
+                target_modules=["q_proj", "k_proj", "v_proj",
+                                "o_proj", "gate_proj", "up_proj", "down_proj"],
+                lora_dropout=0.05,
+                bias="none",
+                task_type="CAUSAL_LM"
+            )
+            model = get_peft_model(model, lora_config)
+
+            # 手动开启gradient checkpointing (DeepSpeed模式下需要)
+            if getattr(training_args, 'gradient_checkpointing', True):
+                model.gradient_checkpointing_enable()
     else:
-        logger.info("No adapter_path provided, creating new LoRA")
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=model_args.lora_r,
-            target_modules=[
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "gate_proj", "up_proj", "down_proj",
-            ],
-            lora_alpha=model_args.lora_alpha,
-            use_gradient_checkpointing="unsloth",
-            random_state=training_args.seed,
-        )
+        # Original Unsloth LoRA handling
+        if adapter_path and os.path.exists(adapter_path):
+            logger.info(f"Loading cold-start LoRA from {adapter_path}")
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, adapter_path)
+
+            # Set only LoRA parameters to be trainable
+            for name, param in model.named_parameters():
+                param.requires_grad = "lora_" in name.lower()
+        else:
+            logger.info("No adapter_path provided, creating new LoRA")
+            model = FastLanguageModel.get_peft_model(
+                model,
+                r=model_args.lora_r,
+                target_modules=[
+                    "q_proj", "k_proj", "v_proj", "o_proj",
+                    "gate_proj", "up_proj", "down_proj",
+                ],
+                lora_alpha=model_args.lora_alpha,
+                use_gradient_checkpointing="unsloth",
+                random_state=training_args.seed,
+            )
 
     # Ensure tokenizer has padding token
     if tokenizer.pad_token is None:
