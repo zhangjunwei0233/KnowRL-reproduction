@@ -40,6 +40,9 @@ use_vllm: false  # disable vllm to enable multi-GPU training
 vllm_gpu_memory_utilization: 0.4
 vllm_enforce_eager: false
 
+# DeepSpeed ZeRO-3 configuration for memory optimization
+deepspeed: ./ds_config_zero3_offload.json
+
 # Logging parameters
 logging_strategy: steps
 logging_steps: 1
