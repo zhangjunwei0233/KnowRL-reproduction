@@ -114,15 +114,27 @@ def grpo_function(
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")
 
     # Load base model and tokenizer
+    model_loading_kwargs = {
+        "model_name": model_args.model_name_or_path,
+        "load_in_4bit": False,
+        "max_lora_rank": model_args.lora_r,
+        "max_seq_length": 2048,
+        "attn_implementation": model_args.attn_implementation,
+    }
+
+    # Load vllm paras only when 'use_vllm' is set
+    if getattr(training_args, 'use_vllm', True):
+        model_loading_kwargs.update({
+            "fast_inference": True,
+            "gpu_memory_utilization": training_args.vllm_gpu_memory_utilization,
+        })
+        logger.info("Loading model with vLLM enabled")
+    else:
+        model_loading_kwargs["fast_inference"] = False
+        logger.info("Loading model with vLLM disabled for multi-GPU training")
+
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=model_args.model_name_or_path,
-        fast_inference=True,
-        load_in_4bit=False,
-        max_lora_rank=model_args.lora_r,
-        max_seq_length=2048,
-        gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
-        attn_implementation=model_args.attn_implementation,
-    )
+        **model_loading_kwargs)
 
     # Load existing LoRA adapter if provided, otherwise create new LoRA
     adapter_path = getattr(training_args, 'adapter_path', None)
