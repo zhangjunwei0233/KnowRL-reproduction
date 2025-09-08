@@ -4,7 +4,7 @@
 export OPENAI_API_KEY_FACTSCORE="sk-47cc346af1af4ede93091bec6ea83038"
 export OPENAI_BASE_URL_FACTSCORE="https://api.deepseek.com"
 
-export OPENAI_API_KEY_JUDGE="sk-47cc346af1af4ede93091bec6ea83038"
+export OPENAI_API_KEY_JUDGE="sk-44a9c34386e44fb087e4b056d2bb0d42"
 export OPENAI_API_BASE_JUDGE="https://api.deepseek.com"
 
 export SWANLAB_API_KEY="dgIXV7EsCZL3OMGq5lKvZ"
@@ -35,7 +35,9 @@ echo "Starting GRPO training..."
 echo "Config: $CONFIG_FILE"
 echo "GPU: $CUDA_VISIBLE_DEVICES"
 
-python main.py --config "$CONFIG_FILE"
+# python main.py --config "$CONFIG_FILE"
+
+torchrun --nproc_per_node=4 train/main.py --config "$CONFIG_FILE"
 
 if [ $? -eq 0 ]; then
     echo "✅ Training completed successfully!"

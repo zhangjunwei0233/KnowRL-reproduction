@@ -162,6 +162,10 @@ if [[ -f "$CONDA_PREFIX/bin/nvcc" ]]; then
     export CUDA_HOME=$CONDA_PREFIX
     export PATH=$CUDA_HOME/bin:$PATH
     export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+    
+    # Set compilers for Triton compilation (containerized environment)
+    export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
+    export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
 fi
 EOF
             
@@ -170,6 +174,8 @@ EOF
 #!/bin/bash
 # Clean up CUDA environment when deactivating
 unset CUDA_HOME
+unset CC
+unset CXX
 # Note: PATH and LD_LIBRARY_PATH will be restored by conda automatically
 EOF
             

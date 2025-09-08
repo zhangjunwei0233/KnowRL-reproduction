@@ -116,11 +116,11 @@ def grpo_function(
     # Load model and tokenizer
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_args.model_name_or_path,
-        fast_inference=True,
+        fast_inference=False,
         load_in_4bit=False,
         max_lora_rank=model_args.lora_r,
         max_seq_length=2048,
-        gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
+        # gpu_memory_utilization=training_args.vllm_gpu_memory_utilization,
         attn_implementation=model_args.attn_implementation,
     )
 
