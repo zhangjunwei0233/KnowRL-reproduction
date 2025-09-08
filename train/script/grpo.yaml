@@ -40,9 +40,9 @@ max_prompt_length: 256
 max_completion_length: 1024
 num_generations: 12
 use_vllm: true
-vllm_device: cuda:3
+vllm_device: auto
 vllm_max_model_len: 2048
-vllm_gpu_memory_utilization: 0.4
+vllm_gpu_memory_utilization: 0.2
 vllm_enforce_eager: false
 
 # Logging parameters

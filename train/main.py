@@ -7,6 +7,8 @@ from reward_function import (
 from trl import GRPOConfig, GRPOTrainer, ModelConfig, TrlParser
 import unsloth
 import os
+import torch
+import torch.distributed as dist
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
@@ -21,8 +23,8 @@ PatchFastRL("GRPO", FastLanguageModel)
 
 # Setup logging
 logger = setup_logging()
-# Initialize reward scorers
-combined_reward = CombinedScorer()
+# Initialize reward scorers - will be initialized later based on distributed setup
+combined_reward = None
 
 
 @dataclass
@@ -109,6 +111,20 @@ def grpo_function(
     training_args: GRPOConfig,
     callbacks: List,
 ):
+    # Initialize distributed training if using multiple GPUs
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    
+    if world_size > 1:
+        if not dist.is_initialized():
+            dist.init_process_group(backend='nccl')
+        torch.cuda.set_device(local_rank)
+        logger.info(f"Initialized distributed training: rank {local_rank}, world_size {world_size}")
+    
+    # Initialize reward scorers on all processes (they need to be available for GRPO)
+    global combined_reward
+    combined_reward = CombinedScorer()
+    
     logger.info(f"Model parameters: {model_args}")
     logger.info(f"Training parameters: {training_args}")
     logger.info(f"Dataset field mapping: {dataset_args.field_mapping}")

@@ -37,7 +37,7 @@ echo "GPU: $CUDA_VISIBLE_DEVICES"
 
 # python main.py --config "$CONFIG_FILE"
 
-torchrun --nproc_per_node=4 train/main.py --config "$CONFIG_FILE"
+torchrun --nproc_per_node=4 main.py --config "$CONFIG_FILE"
 
 if [ $? -eq 0 ]; then
     echo "✅ Training completed successfully!"
